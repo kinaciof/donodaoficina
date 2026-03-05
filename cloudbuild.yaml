@@ -9,8 +9,9 @@ steps:
     entrypoint: npm
     args: ['run', 'build']
 
-  # 3. Deploy para o Firebase Hosting
-  - name: 'gcr.io/donodaoficina/firebase'
+  # 3. Deploy para o Firebase Hosting (usando imagem pública e oficial)
+  - name: 'go.firebase.tools/firebase:latest'
+    entrypoint: firebase
     args: ['deploy', '--project', 'donodaoficina', '--only', 'hosting']
 
 options:
