@@ -9,8 +9,8 @@ steps:
     entrypoint: npm
     args: ['run', 'build']
 
-  # 3. Deploy para o Firebase Hosting (usando imagem da comunidade no GitHub)
-  - name: 'ghcr.io/w9jds/w9jds/firebase-action:latest'
+  # 3. Deploy para o Firebase Hosting (usando imagem da comunidade CORRETA)
+  - name: 'ghcr.io/w9jds/firebase-action:latest'
     entrypoint: firebase
     args: ['deploy', '--project', 'donodaoficina', '--only', 'hosting']
 
