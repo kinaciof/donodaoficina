@@ -9,8 +9,8 @@ steps:
     entrypoint: npm
     args: ['run', 'build']
 
-  # 3. Deploy para o Firebase Hosting (usando imagem pública e oficial)
-  - name: 'go.firebase.tools/firebase:latest'
+  # 3. Deploy para o Firebase Hosting (usando endereço direto da imagem)
+  - name: 'docker.io/firebase/firebase-tools:latest'
     entrypoint: firebase
     args: ['deploy', '--project', 'donodaoficina', '--only', 'hosting']
 
