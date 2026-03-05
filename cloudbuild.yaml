@@ -13,7 +13,3 @@ steps:
 
 options:
   logging: CLOUD_LOGGING_ONLY
-
-# As the Service Account will have Firebase Admin permissions,
-# we don't strictly need to pass credentials explicitly to the CLI here.
->>>>>>> Stashed changes
