@@ -5,27 +5,9 @@ import { Tooltip } from '@/components/ui/Tooltip';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-slate-900 font-sans text-slate-100 flex flex-col">
-      {/* Header */}
-      <header className="bg-emerald-700 text-white shadow-lg py-4 px-6 md:px-12 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-emerald-700 font-bold text-xl shadow-inner">
-            DO
-          </div>
-          <h1 className="text-2xl font-bold tracking-wide">Dono da Oficina</h1>
-        </div>
-        <nav className="hidden md:flex gap-6 font-medium items-center">
-          <Link href="/" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Painel</Link>
-          <Link href="/client-access" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Portal do Cliente</Link>
-          <Link href="/3a502f6b86d9a18016f4d38c64e5264f" className="flex items-center gap-1 bg-black/20 hover:bg-black/30 px-3 py-1.5 rounded-md transition-colors shadow-sm">
-            <Settings size={18} />
-            <span>Configurações</span>
-          </Link>
-        </nav>
-      </header>
-
+    <div className="w-full flex flex-col">
       {/* Main Content */}
-      <main className="flex-grow flex flex-col items-center justify-start p-6 md:p-12">
+      <main className="flex-grow flex flex-col items-center justify-start">
         <div className="w-full max-w-6xl">
           <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
