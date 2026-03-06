@@ -4,6 +4,7 @@ import "./globals.css";
 import PwaModal from "@/components/pwa/PwaModal";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AppLayout } from "@/components/layout/AppLayout";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,8 +31,10 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased bg-background text-foreground`}>
         <ThemeProvider>
           <AuthProvider>
-            {children}
-            <PwaModal />
+            <AppLayout>
+              {children}
+              <PwaModal />
+            </AppLayout>
           </AuthProvider>
         </ThemeProvider>
       </body>
