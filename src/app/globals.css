@@ -2,19 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Default - Light */
+    --background: 255 255 255;
+    --foreground: 15 23 42;
+    --primary: 4 120 87; /* emerald-700 */
+    --primary-foreground: 255 255 255;
+    --card: 248 250 252;
+    --border: 226 232 240;
   }
+
+  /* Core Themes (Dark / Light / Clean) */
+  .dark {
+    --background: 15 23 42; /* slate-900 */
+    --foreground: 241 245 249; /* slate-100 */
+    --primary: 4 120 87; /* emerald-700 */
+    --primary-foreground: 255 255 255;
+    --card: 30 41 59; /* slate-800 */
+    --border: 51 65 85; /* slate-700 */
+  }
+
+  .clean {
+    --background: 255 255 255;
+    --foreground: 0 0 0;
+    --primary: 0 0 0;
+    --primary-foreground: 255 255 255;
+    --card: 255 255 255;
+    --border: 0 0 0;
+  }
+
+  /* Palettes (Combine with Dark/Light by overriding --primary) */
+  .theme-blue-tech { --primary: 37 99 235; } /* blue-600 */
+  .theme-red-racing { --primary: 220 38 38; } /* red-600 */
+  .theme-orange-garage { --primary: 234 88 12; } /* orange-600 */
+  .theme-purple-motor { --primary: 147 51 234; } /* purple-600 */
+  .theme-teal-eco { --primary: 13 148 136; } /* teal-600 */
+  .theme-amber-tool { --primary: 217 119 6; } /* amber-600 */
+  .theme-rose-classic { --primary: 225 29 72; } /* rose-600 */
+  .theme-cyan-future { --primary: 8 145 178; } /* cyan-600 */
+  .theme-indigo-aero { --primary: 79 70 229; } /* indigo-600 */
+  .theme-emerald-default { --primary: 4 120 87; } /* emerald-700 */
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: rgb(var(--background));
+  color: rgb(var(--foreground));
 }

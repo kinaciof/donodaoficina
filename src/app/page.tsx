@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { Calendar, Package, DollarSign, Settings } from 'lucide-react';
+import { EducationalFooter } from '@/components/ui/EducationalFooter';
+import { Tooltip } from '@/components/ui/Tooltip';
 
 export default function Home() {
   return (
@@ -13,8 +15,8 @@ export default function Home() {
           <h1 className="text-2xl font-bold tracking-wide">Dono da Oficina</h1>
         </div>
         <nav className="hidden md:flex gap-6 font-medium items-center">
-          <Link href="/" className="text-emerald-100 hover:text-white transition-colors">Painel</Link>
-          <Link href="/settings" className="flex items-center gap-1 bg-emerald-800 hover:bg-emerald-900 px-3 py-1.5 rounded-md transition-colors shadow-sm">
+          <Link href="/" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">Painel</Link>
+          <Link href="/3a502f6b86d9a18016f4d38c64e5264f" className="flex items-center gap-1 bg-black/20 hover:bg-black/30 px-3 py-1.5 rounded-md transition-colors shadow-sm">
             <Settings size={18} />
             <span>Configurações</span>
           </Link>
@@ -37,49 +39,55 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
             {/* Card Agendamentos */}
-            <div className="bg-slate-800 p-6 rounded-xl shadow-md border border-slate-700 hover:border-emerald-500 transition-all group">
+            <div className="bg-card p-6 rounded-xl shadow-md border border-border hover:border-primary transition-all group">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors">Agendamentos</h3>
-                <div className="p-3 bg-emerald-900/50 rounded-lg text-emerald-400">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">Agendamentos</h3>
+                  <Tooltip content="Total de veículos agendados para manutenção hoje." />
+                </div>
+                <div className="p-3 bg-primary/10 rounded-lg text-primary">
                   <Calendar size={24} />
                 </div>
               </div>
-              <p className="text-4xl font-bold text-white mb-1">8</p>
-              <p className="text-sm text-slate-400">Veículos para hoje</p>
+              <p className="text-4xl font-bold text-foreground mb-1">8</p>
+              <p className="text-sm text-foreground/60">Veículos para hoje</p>
             </div>
 
             {/* Card Estoque */}
-            <div className="bg-slate-800 p-6 rounded-xl shadow-md border border-slate-700 hover:border-emerald-500 transition-all group">
+            <div className="bg-card p-6 rounded-xl shadow-md border border-border hover:border-primary transition-all group">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors">Estoque</h3>
-                <div className="p-3 bg-emerald-900/50 rounded-lg text-emerald-400">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">Estoque</h3>
+                  <Tooltip content="Quantidade de peças e produtos disponíveis no inventário da oficina." />
+                </div>
+                <div className="p-3 bg-primary/10 rounded-lg text-primary">
                   <Package size={24} />
                 </div>
               </div>
-              <p className="text-4xl font-bold text-white mb-1">142</p>
-              <p className="text-sm text-slate-400">Peças disponíveis</p>
+              <p className="text-4xl font-bold text-foreground mb-1">142</p>
+              <p className="text-sm text-foreground/60">Peças disponíveis</p>
             </div>
 
             {/* Card Financeiro */}
-            <div className="bg-slate-800 p-6 rounded-xl shadow-md border border-slate-700 hover:border-emerald-500 transition-all group">
+            <div className="bg-card p-6 rounded-xl shadow-md border border-border hover:border-primary transition-all group">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-slate-200 group-hover:text-emerald-400 transition-colors">Financeiro</h3>
-                <div className="p-3 bg-emerald-900/50 rounded-lg text-emerald-400">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">Financeiro</h3>
+                  <Tooltip content="Total faturado considerando apenas as ordens de serviço concluídas e pagas nesta semana." />
+                </div>
+                <div className="p-3 bg-primary/10 rounded-lg text-primary">
                   <DollarSign size={24} />
                 </div>
               </div>
-              <p className="text-4xl font-bold text-white mb-1">R$ 3.250</p>
-              <p className="text-sm text-slate-400">Faturado esta semana</p>
+              <p className="text-4xl font-bold text-foreground mb-1">R$ 3.250</p>
+              <p className="text-sm text-foreground/60">Faturado esta semana</p>
             </div>
 
           </div>
         </div>
       </main>
       
-      {/* Footer */}
-      <footer className="py-6 text-center text-slate-500 text-sm border-t border-slate-800">
-        &copy; {new Date().getFullYear()} Dono da Oficina. Todos os direitos reservados.
-      </footer>
+      <EducationalFooter description="O Painel de Visão Geral permite o acompanhamento em tempo real das principais métricas da sua oficina, ajudando na tomada de decisão rápida." />
     </div>
   );
 }
