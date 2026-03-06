@@ -24,6 +24,7 @@ export default function AuthPage() {
   // Form Fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [company, setCompany] = useState("");
@@ -57,6 +58,12 @@ export default function AuthPage() {
     resetMessages();
     setLoading(true);
 
+    if (password !== confirmPassword) {
+      setError("As senhas não coincidem. Verifique e tente novamente.");
+      setLoading(false);
+      return;
+    }
+
     if (!isInformal && !cnpj) {
       setError("Por favor, preencha o CNPJ ou marque 'Oficina Informal'.");
       setLoading(false);
@@ -76,32 +83,39 @@ export default function AuthPage() {
       trialEndsAt.setDate(trialEndsAt.getDate() + 15);
 
       // Create user/tenant document
-      await setDoc(doc(db, "users", user.uid), {
-        uid: user.uid,
-        email: email,
-        firstName,
-        lastName,
-        company,
-        cpf,
-        phone,
-        cnpj: isInformal ? "Informal" : cnpj,
-        isInformal,
-        role: "owner",
-        tenant_id: user.uid, // Owner is their own tenant initially
-        createdAt: new Date(),
-        trialEndsAt: trialEndsAt,
-        status: "active"
-      });
+      try {
+        await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
+          email: email,
+          firstName,
+          lastName,
+          company,
+          cpf,
+          phone,
+          cnpj: isInformal ? "Informal" : cnpj,
+          isInformal,
+          role: "owner",
+          tenant_id: user.uid, // Owner is their own tenant initially
+          createdAt: new Date(),
+          trialEndsAt: trialEndsAt,
+          status: "active"
+        });
+      } catch (firestoreError: any) {
+        console.error("Firestore Error:", firestoreError);
+        setError(`Conta criada, mas houve um erro ao salvar o perfil no banco de dados (Verifique as regras do Firestore). Detalhe: ${firestoreError.message}`);
+        setLoading(false);
+        return;
+      }
 
       router.push("/");
     } catch (err: any) {
+      console.error("Auth Error:", err);
       if (err.code === 'auth/email-already-in-use') {
         setError("Este e-mail já está cadastrado.");
       } else if (err.code === 'auth/weak-password') {
         setError("A senha deve ter pelo menos 6 caracteres.");
       } else {
-        setError("Erro ao criar conta. Tente novamente.");
-        console.error(err);
+        setError(`Erro ao criar conta: ${err.message}`);
       }
     } finally {
       setLoading(false);
@@ -194,11 +208,20 @@ export default function AuthPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Senha</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Lock size={18} /></div>
-                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="••••••••" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Senha</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Lock size={18} /></div>
+                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="••••••••" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Confirmar Senha</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Lock size={18} /></div>
+                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={6} className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="••••••••" />
+                  </div>
                 </div>
               </div>
 
