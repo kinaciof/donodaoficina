@@ -49,3 +49,27 @@ body {
   background-color: rgb(var(--background));
   color: rgb(var(--foreground));
 }
+
+/* Print Styles */
+@media print {
+  body {
+    background-color: white;
+    color: black;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+  
+  .print-container {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    padding: 20mm;
+    background: white;
+  }
+}
