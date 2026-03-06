@@ -1,1 +1,27 @@
- INFO  Accepting connections at http://localhost:42663
+ INFO  Accepting connections at http://localhost:3000
+ HTTP  3/6/2026 2:18:07 PM ::1 GET /login
+ HTTP  3/6/2026 2:18:07 PM ::1 Returned 200 in 39 ms
+ HTTP  3/6/2026 2:18:07 PM ::1 GET /_next/static/media/e4af272ccee01ff0-s.p.woff2
+ HTTP  3/6/2026 2:18:07 PM ::1 GET /_next/static/css/3c767138ff496b09.css
+ HTTP  3/6/2026 2:18:07 PM ::1 Returned 200 in 4 ms
+ HTTP  3/6/2026 2:18:07 PM ::1 Returned 200 in 4 ms
+ HTTP  3/6/2026 2:18:07 PM ::1 GET /_next/static/chunks/webpack-a214a74354ae5831.js
+ HTTP  3/6/2026 2:18:07 PM ::1 GET /_next/static/chunks/fd9d1056-5f66d09950ce6dd9.js
+ HTTP  3/6/2026 2:18:07 PM ::1 GET /_next/static/chunks/69-30d35078e95c33d5.js
+ HTTP  3/6/2026 2:18:07 PM ::1 GET /_next/static/chunks/main-app-211c41536461e7b5.js
+ HTTP  3/6/2026 2:18:07 PM ::1 GET /_next/static/chunks/7e4c7320-ba71c5d73c608a82.js
+ HTTP  3/6/2026 2:18:07 PM ::1 GET /_next/static/chunks/59a99548-352ea652e65abceb.js
+ HTTP  3/6/2026 2:18:07 PM ::1 Returned 200 in 10 ms
+ HTTP  3/6/2026 2:18:07 PM ::1 Returned 200 in 9 ms
+ HTTP  3/6/2026 2:18:07 PM ::1 Returned 200 in 13 ms
+ HTTP  3/6/2026 2:18:07 PM ::1 Returned 200 in 16 ms
+ HTTP  3/6/2026 2:18:07 PM ::1 Returned 200 in 16 ms
+ HTTP  3/6/2026 2:18:07 PM ::1 GET /_next/static/chunks/825-7624032ad85fd0af.js
+ HTTP  3/6/2026 2:18:07 PM ::1 Returned 200 in 20 ms
+ HTTP  3/6/2026 2:18:07 PM ::1 GET /_next/static/chunks/app/login/page-a09b3f6ec0b4c75a.js
+ HTTP  3/6/2026 2:18:07 PM ::1 Returned 200 in 23 ms
+ HTTP  3/6/2026 2:18:07 PM ::1 Returned 200 in 31 ms
+ HTTP  3/6/2026 2:18:07 PM ::1 GET /_next/static/chunks/250-f33f8dafc4251b15.js
+ HTTP  3/6/2026 2:18:07 PM ::1 GET /_next/static/chunks/app/layout-ec4775737c3457cc.js
+ HTTP  3/6/2026 2:18:07 PM ::1 Returned 200 in 10 ms
+ HTTP  3/6/2026 2:18:07 PM ::1 Returned 200 in 12 ms
