@@ -94,6 +94,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (error) {
           console.error("Error fetching user data:", error);
           setTenantId(firebaseUser.uid);
+        } finally {
+          setLoading(false);
         }
       } else {
         // Logged out state
@@ -107,8 +109,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!PUBLIC_ROUTES.includes(pathname || "")) {
           router.push("/login");
         }
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();

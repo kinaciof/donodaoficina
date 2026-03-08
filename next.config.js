@@ -1,17 +1,7 @@
-/** @type {import('next').NextConfig} */
-const withPWA = require('next-pwa')({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development'
-})
+
 
 const nextConfig = {
-  output: 'export',
-  distDir: 'out',
-  images: {
-    unoptimized: true
-  }
-}
+  // output: "export", removido pois rotas dinâmicas como /os/[id] precisam de SSR/fallback ou geração manual
+};
 
-module.exports = withPWA(nextConfig)
+module.exports = nextConfig;
