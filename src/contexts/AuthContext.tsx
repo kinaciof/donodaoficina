@@ -27,7 +27,7 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 const PUBLIC_ROUTES = ["/login", "/client-access"];
-const ALLOWED_EXPIRED_ROUTES = ["/billing", "/login", "/admin"];
+const ALLOWED_EXPIRED_ROUTES = ["/billing", "/login", "/21232f297a57a5a743894a0e4a801fc3"];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
