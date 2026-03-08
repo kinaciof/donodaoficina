@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { auth } from "@/lib/firebase/config";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -31,6 +32,7 @@ export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const { user } = useAuth();
+  const { tenantData } = useTenant();
   const isSuperAdmin = user?.email === "krystianoinacio@gmail.com";
 
   const handleLogout = () => {
@@ -44,7 +46,9 @@ export function Sidebar() {
           DO
         </div>
         <div className="flex-1 truncate">
-          <h1 className="text-xl font-bold tracking-wide text-white">Dono da Oficina</h1>
+          <h1 className="text-xl font-bold tracking-wide text-white" title={tenantData?.company_name || "Dono da Oficina"}>
+            {tenantData?.company_name || "Dono da Oficina"}
+          </h1>
           <p className="text-xs text-emerald-200 truncate">{user?.email}</p>
         </div>
       </div>
@@ -107,10 +111,10 @@ export function Sidebar() {
       {/* Mobile Topbar */}
       <div className="md:hidden bg-emerald-800 text-white flex items-center justify-between p-4 shadow-md sticky top-0 z-40">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-white rounded flex items-center justify-center text-emerald-700 font-bold shadow-inner">
+          <div className="w-8 h-8 bg-white rounded flex items-center justify-center text-emerald-700 font-bold shadow-inner shrink-0">
             DO
           </div>
-          <span className="font-bold">Dono da Oficina</span>
+          <span className="font-bold truncate max-w-[200px]">{tenantData?.company_name || "Dono da Oficina"}</span>
         </div>
         <button onClick={() => setIsOpen(!isOpen)} className="p-2 bg-emerald-700 rounded-md">
           {isOpen ? <X size={24} /> : <Menu size={24} />}
