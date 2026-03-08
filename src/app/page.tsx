@@ -5,8 +5,9 @@ import { useTenant } from "@/contexts/TenantContext";
 import { useEffect, useState } from "react";
 import { collection, query, orderBy, getDocs, Timestamp, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
-import { Search, Plus, Wrench, MoreVertical, Calendar, User, Clock, CheckCircle } from "lucide-react";
+import { Plus, Wrench, MoreVertical, Calendar, User, TrendingUp, CircleDollarSign } from "lucide-react";
 import Link from "next/link";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 interface WorkOrder {
   id: string;
@@ -38,6 +39,15 @@ export default function Dashboard() {
   const [selectedCliente, setSelectedCliente] = useState("");
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
+  
+  // BI States
+  const [biData, setBiData] = useState({
+    totalAberto: 0,
+    totalFinalizado: 0,
+    faturamentoPrevisto: 0,
+    faturamentoRealizado: 0,
+    chartData: [] as any[]
+  });
 
   const fetchData = async () => {
     if (!tenantId) return;
@@ -46,7 +56,39 @@ export default function Dashboard() {
       // Busca OS
       const qOrders = query(collection(db, "tenants", tenantId, "workOrders"), orderBy("createdAt", "desc"));
       const snapOrders = await getDocs(qOrders);
-      setOrders(snapOrders.docs.map(doc => ({ id: doc.id, ...doc.data() })) as WorkOrder[]);
+      const ordersData = snapOrders.docs.map(doc => ({ id: doc.id, ...doc.data() })) as WorkOrder[];
+      setOrders(ordersData);
+
+      // Calcular BI Metrics
+      let aberto = 0;
+      let finalizado = 0;
+      let fatPrevisto = 0;
+      let fatRealizado = 0;
+      const statusCount: any = { orcamento: 0, aguardando_peca: 0, em_servico: 0, finalizado: 0 };
+
+      ordersData.forEach(os => {
+        if (os.status === "finalizado") {
+          finalizado++;
+          fatRealizado += (os.valorEstimado || 0);
+        } else {
+          aberto++;
+          fatPrevisto += (os.valorEstimado || 0);
+        }
+        statusCount[os.status] += 1;
+      });
+
+      setBiData({
+        totalAberto: aberto,
+        totalFinalizado: finalizado,
+        faturamentoPrevisto: fatPrevisto,
+        faturamentoRealizado: fatRealizado,
+        chartData: [
+          { name: "Orçamento", value: statusCount.orcamento, color: "#3b82f6" },
+          { name: "Ag. Peça", value: statusCount.aguardando_peca, color: "#f97316" },
+          { name: "Em Serviço", value: statusCount.em_servico, color: "#a855f7" },
+          { name: "Finalizado", value: statusCount.finalizado, color: "#10b981" },
+        ]
+      });
 
       // Busca Clientes para o select do modal
       const qClientes = query(collection(db, "tenants", tenantId, "clientes"), orderBy("nome", "asc"));
@@ -134,83 +176,138 @@ export default function Dashboard() {
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors shadow-sm"
+            className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors shadow-sm"
           >
             <Plus size={18} />
-            <span>Nova O.S.</span>
+            <span>Nova Ordem de Serviço</span>
           </button>
         </div>
       </div>
 
-      {/* Kanban / Lista */}
-      <div className="mt-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <Wrench size={20} className="text-emerald-600" />
-            Ordens de Serviço Recentes
-          </h2>
-          <Link href="/dd302f94682dbd2a114d63b0433602e0" className="text-sm font-medium text-emerald-600 hover:text-emerald-700">Ver todas &rarr;</Link>
+      {/* Dashboards Financeiros */}
+      {!loading && orders.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+              <Wrench size={24} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">O.S. em Aberto</p>
+              <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">{biData.totalAberto}</h3>
+            </div>
+          </div>
+          
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400">
+              <CircleDollarSign size={24} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Receita Prevista</p>
+              <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(biData.faturamentoPrevisto)}
+              </h3>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+              <TrendingUp size={24} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Faturado (Finalizadas)</p>
+              <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(biData.faturamentoRealizado)}
+              </h3>
+            </div>
+          </div>
         </div>
+      )}
 
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          </div>
-        ) : orders.length === 0 ? (
-          <div className="bg-white dark:bg-slate-800 rounded-xl p-10 text-center border border-slate-200 dark:border-slate-700 border-dashed">
-            <Wrench size={40} className="text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-2">Nenhuma Ordem de Serviço</h3>
-            <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-6">Você ainda não tem serviços cadastrados. Adicione um cliente e crie a primeira O.S.</p>
-            <button onClick={() => setIsModalOpen(true)} className="text-emerald-600 font-medium hover:underline">
-              Criar primeira O.S.
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {orders.map((os) => (
-              <Link href={`/dd302f94682dbd2a114d63b0433602e0/gestao?id=${os.id}`} key={os.id} className="block">
-                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow relative group cursor-pointer h-full">
-                
-                <div className="flex justify-between items-start mb-3">
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${getStatusColor(os.status)}`}>
-                    {getStatusLabel(os.status)}
-                  </span>
-                  <button className="text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <MoreVertical size={18} />
-                  </button>
-                </div>
-
-                <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100 line-clamp-1 mb-1">{os.veiculo}</h3>
-                <div className="inline-block bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded text-xs font-mono font-bold text-slate-600 dark:text-slate-300 mb-4">
-                  {os.placa}
-                </div>
-
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                    <User size={14} className="text-slate-400" />
-                    <span className="truncate">{os.clienteNome}</span>
-                  </div>
-                  <div className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400">
-                    <Wrench size={14} className="text-slate-400 mt-0.5 shrink-0" />
-                    <span className="line-clamp-2">{os.descricao || "Sem descrição"}</span>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                  <div className="text-sm font-medium text-slate-500 flex items-center gap-1.5">
-                    <Calendar size={14} />
-                    {os.createdAt?.toDate ? os.createdAt.toDate().toLocaleDateString('pt-BR') : 'Hoje'}
-                  </div>
-                  <div className="font-bold text-slate-800 dark:text-slate-200">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(os.valorEstimado)}
-                  </div>
-                </div>
-
-                </div>
-              </Link>
-            ))}
+      {/* Gráfico e Lista */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        
+        {/* Gráfico */}
+        {!loading && orders.length > 0 && (
+          <div className="lg:col-span-1 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6">Status dos Serviços</h2>
+            <div className="flex-1 min-h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={biData.chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                    {biData.chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
+
+        {/* Lista O.S. */}
+        <div className={`bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 ${loading || orders.length === 0 ? 'lg:col-span-3' : 'lg:col-span-2'}`}>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              Ordens de Serviço Recentes
+            </h2>
+            <Link href="/dd302f94682dbd2a114d63b0433602e0" className="text-sm font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1.5 rounded-lg transition-colors">
+              Ver Histórico Completo
+            </Link>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="text-center py-16 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
+              <Wrench size={40} className="text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-2">Nenhuma Ordem de Serviço</h3>
+              <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-6">Você ainda não tem serviços cadastrados. Adicione um cliente e crie a primeira O.S.</p>
+              <button onClick={() => setIsModalOpen(true)} className="text-emerald-600 font-bold hover:underline">
+                Criar primeira O.S.
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {orders.slice(0, 6).map((os) => (
+                <Link href={`/dd302f94682dbd2a114d63b0433602e0/gestao?id=${os.id}`} key={os.id} className="block">
+                  <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 transition-colors relative group h-full">
+                    
+                    <div className="flex justify-between items-start mb-2">
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider ${getStatusColor(os.status)}`}>
+                        {getStatusLabel(os.status)}
+                      </span>
+                      <MoreVertical size={16} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+
+                    <h3 className="font-bold text-slate-800 dark:text-slate-100 line-clamp-1 mb-1">{os.veiculo}</h3>
+                    
+                    <div className="space-y-1.5 mb-4">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                        <User size={12} /> <span className="truncate">{os.clienteNome}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                      <div className="text-xs font-mono font-bold text-slate-500 bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600">
+                        {os.placa}
+                      </div>
+                      <div className="font-bold text-slate-800 dark:text-slate-200 text-sm">
+                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(os.valorEstimado || 0)}
+                      </div>
+                    </div>
+
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
 
       {/* Modal Nova OS */}

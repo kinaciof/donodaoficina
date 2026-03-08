@@ -8,10 +8,16 @@ import { db } from "@/lib/firebase/config";
 interface TenantData {
   tenant_id: string;
   company_name: string;
+  phone?: string;
+  cep?: string;
+  endereco?: string;
+  bairro?: string;
+  cidade?: string;
+  uf?: string;
+  logoUrl?: string;
   cnpj?: string;
   isInformal?: boolean;
   status: string;
-  // you can extend this interface as the app grows
 }
 
 interface TenantContextType {

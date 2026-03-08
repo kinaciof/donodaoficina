@@ -30,11 +30,38 @@ export default function ClientesPage() {
   // Form State
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
+  const [cep, setCep] = useState("");
   const [endereco, setEndereco] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [uf, setUf] = useState("");
   const [placa, setPlaca] = useState("");
   const [marca, setMarca] = useState("");
   const [modelo, setModelo] = useState("");
   const [ano, setAno] = useState("");
+  const [loadingCep, setLoadingCep] = useState(false);
+
+  const buscarCep = async () => {
+    const cepLimpo = cep.replace(/\D/g, "");
+    if (cepLimpo.length !== 8) return;
+    setLoadingCep(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        setEndereco(data.logradouro);
+        setBairro(data.bairro);
+        setCidade(data.localidade);
+        setUf(data.uf);
+      } else {
+        alert("CEP não encontrado.");
+      }
+    } catch (err) {
+      console.error("Erro ao buscar CEP:", err);
+    } finally {
+      setLoadingCep(false);
+    }
+  };
 
   const fetchClientes = async () => {
     if (!tenantId) return;
@@ -71,10 +98,12 @@ export default function ClientesPage() {
     if (!tenantId) return;
 
     try {
+      const fullAddress = `${endereco}${bairro ? `, ${bairro}` : ''}${cidade ? ` - ${cidade}/${uf}` : ''}${cep ? ` (CEP: ${cep})` : ''}`;
+      
       await addDoc(collection(db, "tenants", tenantId, "clientes"), {
         nome,
         telefone,
-        endereco,
+        endereco: fullAddress,
         veiculos: [
           {
             placa: placa.toUpperCase(),
@@ -88,7 +117,8 @@ export default function ClientesPage() {
       
       setIsModalOpen(false);
       // Limpa os campos
-      setNome(""); setTelefone(""); setEndereco("");
+      setNome(""); setTelefone(""); setCep(""); setEndereco("");
+      setBairro(""); setCidade(""); setUf("");
       setPlaca(""); setMarca(""); setModelo(""); setAno("");
       // Recarrega a lista
       fetchClientes();
@@ -224,9 +254,33 @@ export default function ClientesPage() {
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Telefone / WhatsApp *</label>
                     <input type="text" required value={telefone} onChange={e => setTelefone(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="(11) 99999-9999" />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Endereço</label>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                  <div className="md:col-span-1">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">CEP</label>
+                    <div className="flex gap-2">
+                      <input type="text" value={cep} onChange={e => setCep(e.target.value)} onBlur={buscarCep} maxLength={9} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="00000-000" />
+                      <button type="button" onClick={buscarCep} disabled={loadingCep} className="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 px-3 rounded-lg flex items-center justify-center transition-colors">
+                        <Search size={18} className="text-slate-600 dark:text-slate-300" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="md:col-span-3">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Rua / Logradouro</label>
                     <input type="text" value={endereco} onChange={e => setEndereco(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Rua exemplo, 123" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Bairro</label>
+                    <input type="text" value={bairro} onChange={e => setBairro(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Bairro" />
+                  </div>
+                  <div className="md:col-span-1">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Cidade</label>
+                    <input type="text" value={cidade} onChange={e => setCidade(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Cidade" />
+                  </div>
+                  <div className="md:col-span-1">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">UF</label>
+                    <input type="text" value={uf} onChange={e => setUf(e.target.value)} maxLength={2} className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none uppercase" placeholder="SP" />
                   </div>
                 </div>
               </div>

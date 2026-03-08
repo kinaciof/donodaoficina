@@ -44,8 +44,13 @@ export function Sidebar() {
   const navContent = (
     <>
       <div className="p-4 flex items-center gap-3 border-b border-white/10 mb-4">
-        <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-emerald-700 font-bold text-xl shadow-inner shrink-0">
-          DO
+        <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-emerald-700 font-bold text-xl shadow-inner shrink-0 overflow-hidden">
+          {tenantData?.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={tenantData.logoUrl} alt="Logo" className="w-full h-full object-contain bg-white" />
+          ) : (
+            "DO"
+          )}
         </div>
         <div className="flex-1 truncate">
           <h1 className="text-xl font-bold tracking-wide text-white" title={tenantData?.company_name || "Dono da Oficina"}>
@@ -113,8 +118,13 @@ export function Sidebar() {
       {/* Mobile Topbar */}
       <div className="md:hidden bg-emerald-800 text-white flex items-center justify-between p-4 shadow-md sticky top-0 z-40">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-white rounded flex items-center justify-center text-emerald-700 font-bold shadow-inner shrink-0">
-            DO
+          <div className="w-8 h-8 bg-white rounded flex items-center justify-center text-emerald-700 font-bold shadow-inner shrink-0 overflow-hidden">
+            {tenantData?.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={tenantData.logoUrl} alt="Logo" className="w-full h-full object-contain bg-white" />
+            ) : (
+              "DO"
+            )}
           </div>
           <span className="font-bold truncate max-w-[200px]">{tenantData?.company_name || "Dono da Oficina"}</span>
         </div>
