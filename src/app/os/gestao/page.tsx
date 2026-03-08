@@ -29,7 +29,11 @@ function GestaoOSContent() {
   const [novoServicoValor, setNovoServicoValor] = useState("");
 
   const fetchOS = async () => {
-    if (!tenantId || !id) return;
+    if (!tenantId || !id) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     try {
       const docRef = doc(db, "tenants", tenantId, "workOrders", id as string);
       const snap = await getDoc(docRef);
@@ -52,7 +56,11 @@ function GestaoOSContent() {
   };
 
   useEffect(() => {
-    fetchOS();
+    if (tenantId) {
+      fetchOS();
+    } else {
+      setLoading(false);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId, id]);
 
