@@ -1,373 +1,286 @@
 "use client";
 
-import { useState } from "react";
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  sendPasswordResetEmail,
-  updateProfile
-} from "firebase/auth";
-import { auth, db } from "@/lib/firebase/config";
-import { doc, setDoc } from "firebase/firestore";
-import { useRouter } from "next/navigation";
-import { Car, Lock, Mail, AlertCircle, FileText, Phone, Wrench } from "lucide-react";
-import { Inter } from "next/font/google";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
+import { useEffect, useState } from "react";
+import { collection, query, orderBy, getDocs, Timestamp, addDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase/config";
+import { Search, Plus, Wrench, MoreVertical, Calendar, User, Clock, CheckCircle } from "lucide-react";
+import Link from "next/link";
 
-const inter = Inter({ subsets: ["latin"] });
+interface WorkOrder {
+  id: string;
+  clienteId: string;
+  clienteNome: string;
+  veiculo: string;
+  placa: string;
+  status: "orcamento" | "aguardando_peca" | "em_servico" | "finalizado";
+  descricao: string;
+  valorEstimado: number;
+  createdAt: any;
+}
 
-type AuthMode = "login" | "register" | "forgot_password";
+interface Cliente {
+  id: string;
+  nome: string;
+  veiculos: { placa: string; marca: string; modelo: string }[];
+}
 
-export default function AuthPage() {
-  const [mode, setMode] = useState<AuthMode>("login");
-  const [error, setError] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
+export default function Dashboard() {
+  const { user } = useAuth();
+  const { tenantId, tenantData } = useTenant();
+  const [orders, setOrders] = useState<WorkOrder[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Form Fields
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [company, setCompany] = useState("");
-  const [cpf, setCpf] = useState("");
-  const [phone, setPhone] = useState("");
-  const [cnpj, setCnpj] = useState("");
-  const [isInformal, setIsInformal] = useState(false);
+  // Form OS
+  const [selectedCliente, setSelectedCliente] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [valor, setValor] = useState("");
 
-  const resetMessages = () => {
-    setError("");
-    setSuccessMsg("");
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    resetMessages();
+  const fetchData = async () => {
+    if (!tenantId) return;
     setLoading(true);
-
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // Let AuthContext handle redirect based on role
-    } catch (err: any) {
-      setError("Credenciais inválidas. Verifique seu e-mail e senha.");
-      setLoading(false);
-    }
-  };
+      // Busca OS
+      const qOrders = query(collection(db, "tenants", tenantId, "workOrders"), orderBy("createdAt", "desc"));
+      const snapOrders = await getDocs(qOrders);
+      setOrders(snapOrders.docs.map(doc => ({ id: doc.id, ...doc.data() })) as WorkOrder[]);
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    resetMessages();
-    setLoading(true);
+      // Busca Clientes para o select do modal
+      const qClientes = query(collection(db, "tenants", tenantId, "clientes"), orderBy("nome", "asc"));
+      const snapClientes = await getDocs(qClientes);
+      setClientes(snapClientes.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Cliente[]);
 
-    if (password !== confirmPassword) {
-      setError("As senhas não coincidem. Verifique e tente novamente.");
-      setLoading(false);
-      return;
-    }
-
-    if (!isInformal && !cnpj) {
-      setError("Por favor, preencha o CNPJ ou marque 'Oficina Informal'.");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      await updateProfile(user, {
-        displayName: `${firstName} ${lastName}`
-      });
-
-      // Trial calculation
-      const trialEndsAt = new Date();
-      trialEndsAt.setDate(trialEndsAt.getDate() + 15);
-
-      // Create user/tenant document
-      try {
-        await setDoc(doc(db, "users", user.uid), {
-          uid: user.uid,
-          email: email,
-          firstName,
-          lastName,
-          company,
-          cpf,
-          phone,
-          cnpj: isInformal ? "Informal" : cnpj,
-          isInformal,
-          role: "owner",
-          tenant_id: user.uid, // Owner is their own tenant initially
-          createdAt: new Date(),
-          trialEndsAt: trialEndsAt,
-          status: "active"
-        });
-      } catch (firestoreError: any) {
-        console.error("Firestore Error:", firestoreError);
-        setError(`Conta criada, mas houve um erro ao salvar o perfil no banco de dados (Verifique as regras do Firestore). Detalhe: ${firestoreError.message}`);
-        setLoading(false);
-        return;
-      }
-
-      // Let AuthContext handle redirect
-    } catch (err: any) {
-      console.error("Auth Error:", err);
-      if (err.code === 'auth/email-already-in-use') {
-        setError("Este e-mail já está cadastrado.");
-      } else if (err.code === 'auth/weak-password') {
-        setError("A senha deve ter pelo menos 6 caracteres.");
-      } else {
-        setError(`Erro ao criar conta: ${err.message}`);
-      }
-      setLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    resetMessages();
-    setLoading(true);
-
-    if (!email) {
-      setError("Por favor, preencha seu e-mail para recuperar a senha.");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      await sendPasswordResetEmail(auth, email);
-      setSuccessMsg("Link de recuperação enviado! Verifique sua caixa de entrada.");
-    } catch (err: any) {
-      setError("Erro ao enviar e-mail de recuperação. Verifique se o e-mail está correto.");
+    } catch (error) {
+      console.error("Erro ao carregar dashboard:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className={`min-h-screen flex flex-col md:flex-row bg-slate-50 dark:bg-slate-900 ${inter.className}`}>
+  useEffect(() => {
+    if (tenantId) {
+      fetchData();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantId]);
+
+  const handleCreateOS = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tenantId || !selectedCliente) return;
+
+    const clienteObj = clientes.find(c => c.id === selectedCliente);
+    if (!clienteObj || !clienteObj.veiculos[0]) {
+      alert("Cliente inválido ou sem veículo cadastrado.");
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "tenants", tenantId, "workOrders"), {
+        clienteId: clienteObj.id,
+        clienteNome: clienteObj.nome,
+        veiculo: `${clienteObj.veiculos[0].marca} ${clienteObj.veiculos[0].modelo}`,
+        placa: clienteObj.veiculos[0].placa,
+        status: "orcamento",
+        descricao,
+        valorEstimado: Number(valor) || 0,
+        createdAt: Timestamp.now()
+      });
       
-      {/* Left Column: Forms */}
-      <div className="w-full md:w-1/2 lg:w-5/12 p-8 md:p-12 lg:p-16 flex flex-col justify-center bg-slate-50 dark:bg-slate-900 z-10 shadow-[10px_0_20px_rgba(0,0,0,0.05)] overflow-y-auto">
-        
-        <div className="max-w-md w-full mx-auto">
-          {/* Header Mobile / Brand */}
-          <div className="md:hidden flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-inner">
-              DO
-            </div>
-            <h1 className="text-2xl font-bold tracking-wide text-slate-800 dark:text-white">Dono da Oficina</h1>
-          </div>
+      setIsModalOpen(false);
+      setDescricao(""); setValor(""); setSelectedCliente("");
+      fetchData();
+    } catch (error) {
+      console.error("Erro criar OS:", error);
+      alert("Erro ao criar Ordem de Serviço.");
+    }
+  };
 
-          <h2 className="text-4xl font-extrabold text-slate-800 dark:text-white mb-2">
-            {mode === "login" && "Entrar"}
-            {mode === "register" && "Cadastro"}
-            {mode === "forgot_password" && "Recuperar Senha"}
-          </h2>
-          <p className="text-slate-500 dark:text-slate-400 mb-8">
-            {mode === "login" && "Bem-vindo de volta! Faça login na sua conta."}
-            {mode === "register" && "Preencha seus dados para iniciar seu teste gratuito de 15 dias."}
-            {mode === "forgot_password" && "Enviaremos um link para você redefinir sua senha."}
-          </p>
+  const getStatusColor = (status: string) => {
+    switch(status) {
+      case "orcamento": return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800";
+      case "aguardando_peca": return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-800";
+      case "em_servico": return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800";
+      case "finalizado": return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800";
+      default: return "bg-slate-100 text-slate-800";
+    }
+  };
 
-          {error && (
-            <div className="mb-6 bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 text-red-600 dark:text-red-400 p-4 flex items-start gap-3 text-sm rounded-r-lg">
-              <AlertCircle size={20} className="shrink-0" />
-              <p className="font-medium">{error}</p>
-            </div>
-          )}
+  const getStatusLabel = (status: string) => {
+    switch(status) {
+      case "orcamento": return "Orçamento";
+      case "aguardando_peca": return "Aguardando Peça";
+      case "em_servico": return "Em Serviço";
+      case "finalizado": return "Finalizado";
+      default: return status;
+    }
+  };
 
-          {successMsg && (
-            <div className="mb-6 bg-green-50 dark:bg-green-900/30 border-l-4 border-green-500 text-green-700 dark:text-green-400 p-4 flex items-start gap-3 text-sm rounded-r-lg">
-              <AlertCircle size={20} className="shrink-0" />
-              <p className="font-medium">{successMsg}</p>
-            </div>
-          )}
-
-          {/* REGISTER FORM */}
-          {mode === "register" && (
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Nome</label>
-                  <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} required className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="João" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Sobrenome</label>
-                  <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} required className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="Silva" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">E-mail</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Mail size={18} /></div>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="joao@email.com" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Senha</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Lock size={18} /></div>
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="••••••••" minLength={6} />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Confirmar Senha</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Lock size={18} /></div>
-                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="••••••••" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-slate-200 dark:border-slate-700 my-4 pt-4">
-                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3 uppercase tracking-wider">Dados da Oficina</h3>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Nome da Oficina</label>
-                  <input type="text" value={company} onChange={(e) => setCompany(e.target.value)} required className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="Oficina do João" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">CPF (Proprietário)</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><FileText size={18} /></div>
-                    <input type="text" value={cpf} onChange={(e) => setCpf(e.target.value)} required className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="000.000.000-00" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Telefone</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Phone size={18} /></div>
-                    <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} required className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="(00) 00000-0000" />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">CNPJ da Empresa</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><FileText size={18} /></div>
-                  <input type="text" value={cnpj} onChange={(e) => setCnpj(e.target.value)} disabled={isInformal} className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm disabled:bg-slate-100 disabled:text-slate-400" placeholder="00.000.000/0000-00" />
-                </div>
-                <div className="mt-2 flex items-center gap-2">
-                  <input type="checkbox" id="informal" checked={isInformal} onChange={(e) => { setIsInformal(e.target.checked); if (e.target.checked) setCnpj(""); }} className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                  <label htmlFor="informal" className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer">Oficina Informal (Não possuo CNPJ)</label>
-                </div>
-              </div>
-
-              <button type="submit" disabled={loading} className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-lg shadow-md transition-colors flex items-center justify-center">
-                {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : "Criar Conta e Iniciar Teste"}
-              </button>
-            </form>
-          )}
-
-          {/* LOGIN FORM */}
-          {mode === "login" && (
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">E-mail</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Mail size={18} /></div>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="seu@email.com" />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-1.5">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Senha</label>
-                  <button type="button" onClick={() => setMode("forgot_password")} className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">Esqueceu a senha?</button>
-                </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Lock size={18} /></div>
-                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="••••••••" />
-                </div>
-              </div>
-
-              <button type="submit" disabled={loading} className="w-full mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-lg shadow-md transition-colors flex items-center justify-center">
-                {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : "Entrar"}
-              </button>
-            </form>
-          )}
-
-          {/* FORGOT PASSWORD FORM */}
-          {mode === "forgot_password" && (
-            <form onSubmit={handleForgotPassword} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">E-mail cadastrado</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Mail size={18} /></div>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="seu@email.com" />
-                </div>
-              </div>
-
-              <button type="submit" disabled={loading} className="w-full mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-lg shadow-md transition-colors flex items-center justify-center">
-                {loading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : "Enviar Link de Recuperação"}
-              </button>
-            </form>
-          )}
-
-          {/* TOGGLE LINKS */}
-          <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700 text-center">
-            {mode === "login" ? (
-              <p className="text-slate-600 dark:text-slate-400">
-                Ainda não tem uma conta?{" "}
-                <button onClick={() => { setMode("register"); resetMessages(); }} className="text-blue-600 font-bold hover:underline">
-                  Cadastre-se gratuitamente
-                </button>
-              </p>
-            ) : (
-              <p className="text-slate-600 dark:text-slate-400">
-                Já possui uma conta?{" "}
-                <button onClick={() => { setMode("login"); resetMessages(); }} className="text-blue-600 font-bold hover:underline">
-                  Voltar para o Login
-                </button>
-              </p>
-            )}
-          </div>
-
+  return (
+    <div className="space-y-6">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+            Olá, {user?.displayName || tenantData?.company_name || 'Dono da Oficina'} 👋
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Aqui está o resumo das suas ordens de serviço hoje.</p>
+        </div>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors shadow-sm"
+          >
+            <Plus size={18} />
+            <span>Nova O.S.</span>
+          </button>
         </div>
       </div>
 
-      {/* Right Column: Illustration (Hidden on mobile) */}
-      <div className="hidden md:flex md:w-1/2 lg:w-7/12 bg-blue-500 relative flex-col items-center justify-center p-12 overflow-hidden">
-        
-        {/* Abstract Background Shapes */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <svg className="absolute top-0 right-0 w-full h-full text-blue-600/30 transform translate-x-1/3 -translate-y-1/4" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <polygon fill="currentColor" points="50,0 100,0 100,100 0,100" />
-          </svg>
-        </div>
-
-        <div className="relative z-10 flex flex-col items-center max-w-lg text-center">
-          <div className="w-24 h-24 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white mb-8 shadow-xl">
-            <Wrench size={48} strokeWidth={1.5} />
-          </div>
-          <h2 className="text-3xl lg:text-5xl font-extrabold text-white mb-6 leading-tight">
-            Acelere a gestão da sua oficina.
+      {/* Kanban / Lista */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <Wrench size={20} className="text-emerald-600" />
+            Ordens de Serviço Recentes
           </h2>
-          <p className="text-blue-100 text-lg lg:text-xl font-medium mb-12">
-            Controle de Ordens de Serviço, estoque, notas fiscais e comunicação com clientes. Tudo em um único lugar.
-          </p>
-          
-          <div className="flex gap-4 items-center justify-center w-full">
-            <div className="bg-white/10 backdrop-blur-sm border border-white/20 px-6 py-3 rounded-xl text-white font-medium flex items-center gap-2">
-              <Car size={20} />
-              <span>Multi-dispositivo</span>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm border border-white/20 px-6 py-3 rounded-xl text-white font-medium flex items-center gap-2">
-              <FileText size={20} />
-              <span>Nota Fiscal Fácil</span>
-            </div>
-          </div>
+          <Link href="/os" className="text-sm font-medium text-emerald-600 hover:text-emerald-700">Ver todas &rarr;</Link>
         </div>
 
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-10 text-center border border-slate-200 dark:border-slate-700 border-dashed">
+            <Wrench size={40} className="text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-2">Nenhuma Ordem de Serviço</h3>
+            <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-6">Você ainda não tem serviços cadastrados. Adicione um cliente e crie a primeira O.S.</p>
+            <button onClick={() => setIsModalOpen(true)} className="text-emerald-600 font-medium hover:underline">
+              Criar primeira O.S.
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {orders.map((os) => (
+              <div key={os.id} className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow relative group cursor-pointer">
+                
+                <div className="flex justify-between items-start mb-3">
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${getStatusColor(os.status)}`}>
+                    {getStatusLabel(os.status)}
+                  </span>
+                  <button className="text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <MoreVertical size={18} />
+                  </button>
+                </div>
+
+                <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100 line-clamp-1 mb-1">{os.veiculo}</h3>
+                <div className="inline-block bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded text-xs font-mono font-bold text-slate-600 dark:text-slate-300 mb-4">
+                  {os.placa}
+                </div>
+
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <User size={14} className="text-slate-400" />
+                    <span className="truncate">{os.clienteNome}</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <Wrench size={14} className="text-slate-400 mt-0.5 shrink-0" />
+                    <span className="line-clamp-2">{os.descricao || "Sem descrição"}</span>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                  <div className="text-sm font-medium text-slate-500 flex items-center gap-1.5">
+                    <Calendar size={14} />
+                    {os.createdAt?.toDate ? os.createdAt.toDate().toLocaleDateString('pt-BR') : 'Hoje'}
+                  </div>
+                  <div className="font-bold text-slate-800 dark:text-slate-200">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(os.valorEstimado)}
+                  </div>
+                </div>
+
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
+      {/* Modal Nova OS */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-800">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white">Criar Orçamento (O.S.)</h2>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <Plus className="rotate-45" size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateOS} className="p-5 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Selecione o Cliente *</label>
+                {clientes.length === 0 ? (
+                  <div className="p-3 bg-orange-50 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 rounded text-sm mb-2 border border-orange-200 dark:border-orange-800">
+                    Você não tem clientes cadastrados. <Link href="/clientes" className="font-bold underline">Cadastre um cliente</Link> primeiro.
+                  </div>
+                ) : (
+                  <select 
+                    required 
+                    value={selectedCliente} 
+                    onChange={e => setSelectedCliente(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                  >
+                    <option value="">-- Selecione --</option>
+                    {clientes.map(c => (
+                      <option key={c.id} value={c.id}>{c.nome} ({c.veiculos[0]?.placa || 'Sem placa'})</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Defeito Reclamado / Descrição *</label>
+                <textarea 
+                  required 
+                  value={descricao} 
+                  onChange={e => setDescricao(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none min-h-[100px]" 
+                  placeholder="Ex: Cliente relata barulho na suspensão dianteira ao passar em buracos..." 
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Valor Estimado Inicial (R$)</label>
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  value={valor} 
+                  onChange={e => setValor(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none" 
+                  placeholder="0.00" 
+                />
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-100 rounded-lg">
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={clientes.length === 0}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-medium rounded-lg shadow-sm"
+                >
+                  Criar O.S.
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
