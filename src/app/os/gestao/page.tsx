@@ -6,10 +6,13 @@ import { db } from "@/lib/firebase/config";
 import { doc, getDoc, collection, getDocs, updateDoc, query, orderBy } from "firebase/firestore";
 import { ArrowLeft, User, Car, Calendar, Wrench, Share2, Plus, Trash2, Printer } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
-export default function GestaoOS() {
-  const { id } = useParams();
+import { Suspense } from "react";
+
+function GestaoOSContent() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
   const { tenantId, tenantData } = useTenant();
   const [os, setOs] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -365,5 +368,13 @@ export default function GestaoOS() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function GestaoOS() {
+  return (
+    <Suspense fallback={<div className="text-center py-20">Carregando informações...</div>}>
+      <GestaoOSContent />
+    </Suspense>
   );
 }

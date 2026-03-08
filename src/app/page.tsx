@@ -168,7 +168,7 @@ export default function Dashboard() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {orders.map((os) => (
-              <Link href={`/os/${os.id}`} key={os.id} className="block">
+              <Link href={`/os/gestao?id=${os.id}`} key={os.id} className="block">
                 <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow relative group cursor-pointer h-full">
                 
                 <div className="flex justify-between items-start mb-3">
