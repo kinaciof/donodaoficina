@@ -1,0 +1,10 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Mesma lógica do Firestore: restringe o acesso aos arquivos apenas
+    // aos usuários que pertencem ao tenant_id correto.
+    match /tenants/{tenantId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == tenantId;
+    }
+  }
+}
