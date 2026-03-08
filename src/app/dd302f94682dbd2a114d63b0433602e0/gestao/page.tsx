@@ -163,10 +163,31 @@ function GestaoOSContent() {
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12">
+    <div className="space-y-6 max-w-5xl mx-auto pb-12 print:max-w-full print:p-0">
       
+      {/* Print Header (Only visible on print) */}
+      <div className="hidden print:flex justify-between items-start border-b-2 border-slate-800 pb-6 mb-6">
+        <div className="flex items-center gap-4">
+          {tenantData?.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={tenantData.logoUrl} alt="Logo" className="w-24 h-24 object-contain" />
+          )}
+          <div>
+            <h1 className="text-2xl font-black uppercase">{tenantData?.company_name || 'Oficina'}</h1>
+            <p className="text-sm text-slate-600">{tenantData?.endereco}{tenantData?.bairro ? `, ${tenantData.bairro}` : ''}</p>
+            <p className="text-sm text-slate-600">{tenantData?.cidade}{tenantData?.uf ? ` - ${tenantData.uf}` : ''} {tenantData?.cep ? ` | CEP: ${tenantData.cep}` : ''}</p>
+            <p className="text-sm font-bold mt-1">Tel: {tenantData?.phone || 'Não informado'}</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <h2 className="text-3xl font-black text-slate-300">ORDEM DE SERVIÇO</h2>
+          <p className="text-lg font-bold">Nº {os.id.slice(0,8).toUpperCase()}</p>
+          <p className="text-sm text-slate-600">Data: {os.createdAt?.toDate ? os.createdAt.toDate().toLocaleDateString('pt-BR') : 'Sem data'}</p>
+        </div>
+      </div>
+
       {/* Header / Navegação */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 print:hidden">
         <Link href="/" className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-2">
           <ArrowLeft size={16} /> Voltar ao Dashboard
         </Link>
@@ -180,15 +201,15 @@ function GestaoOSContent() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden print:shadow-none print:border-none">
         {/* Top Info da O.S */}
-        <div className="p-6 md:p-8 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+        <div className="p-6 md:p-8 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 print:p-0 print:bg-white print:border-none">
           <div className="flex flex-col md:flex-row justify-between gap-6">
-            <div>
-              <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2 uppercase tracking-wide">
+            <div className="print:w-full print:mb-6">
+              <h1 className="text-2xl font-black text-slate-800 dark:text-white mb-2 uppercase tracking-wide print:hidden">
                 Ordem de Serviço
               </h1>
-              <p className="text-slate-500 dark:text-slate-400">ID: <span className="font-mono">{os.id.slice(0,8).toUpperCase()}</span></p>
+              <p className="text-slate-500 dark:text-slate-400 print:hidden">ID: <span className="font-mono">{os.id.slice(0,8).toUpperCase()}</span></p>
               
               <div className="mt-6 flex flex-col gap-3">
                 <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium">
@@ -206,7 +227,7 @@ function GestaoOSContent() {
               </div>
             </div>
 
-            <div className="flex flex-col items-end justify-between min-w-[200px]">
+            <div className="flex flex-col items-end justify-between min-w-[200px] print:hidden">
               <div className="w-full">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Status Atual</label>
                 <select 
@@ -237,15 +258,15 @@ function GestaoOSContent() {
         </div>
 
         {/* Adicionar Peças e Serviços */}
-        <div className="p-6 md:p-8 space-y-10">
+        <div className="p-6 md:p-8 space-y-10 print:p-0 print:mt-6">
           
           {/* Sessão de Peças */}
           <div>
-            <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-4">
-              <Wrench size={20} className="text-emerald-600" /> Peças Utilizadas
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-4 print:text-black">
+              <Wrench size={20} className="text-emerald-600 print:hidden" /> Peças Utilizadas
             </h2>
             
-            <div className="bg-slate-50 dark:bg-slate-900/30 p-4 rounded-xl border border-slate-200 dark:border-slate-700 mb-4 flex flex-col sm:flex-row gap-3">
+            <div className="bg-slate-50 dark:bg-slate-900/30 p-4 rounded-xl border border-slate-200 dark:border-slate-700 mb-4 flex flex-col sm:flex-row gap-3 print:hidden">
               <div className="flex-1">
                 <select 
                   value={selectedPeca} 
@@ -296,7 +317,7 @@ function GestaoOSContent() {
                         <td className="py-3 text-center">{item.quantidade}x</td>
                         <td className="py-3 text-right">R$ {item.preco.toFixed(2)}</td>
                         <td className="py-3 text-right font-bold text-slate-700 dark:text-slate-300">R$ {(item.quantidade * item.preco).toFixed(2)}</td>
-                        <td className="py-3 text-center">
+                        <td className="py-3 text-center print:hidden">
                           <button onClick={() => removerItem(item.id)} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1.5 rounded transition-colors">
                             <Trash2 size={16} />
                           </button>
@@ -311,11 +332,11 @@ function GestaoOSContent() {
 
           {/* Sessão de Mão de Obra */}
           <div>
-            <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-4">
-              <Wrench size={20} className="text-emerald-600" /> Mão de Obra / Serviços
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-4 print:text-black">
+              <Wrench size={20} className="text-emerald-600 print:hidden" /> Mão de Obra / Serviços
             </h2>
             
-            <div className="bg-slate-50 dark:bg-slate-900/30 p-4 rounded-xl border border-slate-200 dark:border-slate-700 mb-4 flex flex-col sm:flex-row gap-3">
+            <div className="bg-slate-50 dark:bg-slate-900/30 p-4 rounded-xl border border-slate-200 dark:border-slate-700 mb-4 flex flex-col sm:flex-row gap-3 print:hidden">
               <div className="flex-1">
                 <input 
                   type="text" 
@@ -360,7 +381,7 @@ function GestaoOSContent() {
                       <tr key={servico.id}>
                         <td className="py-3 font-medium text-slate-800 dark:text-slate-200">{servico.nome}</td>
                         <td className="py-3 text-right font-bold text-slate-700 dark:text-slate-300">R$ {Number(servico.valor).toFixed(2)}</td>
-                        <td className="py-3 text-center w-12">
+                        <td className="py-3 text-center w-12 print:hidden">
                           <button onClick={() => removerServico(servico.id)} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1.5 rounded transition-colors">
                             <Trash2 size={16} />
                           </button>
@@ -371,6 +392,25 @@ function GestaoOSContent() {
                 </table>
               </div>
             )}
+          </div>
+          
+          {/* Print Total Area */}
+          <div className="hidden print:block mt-8 pt-4 border-t-2 border-slate-800 text-right">
+            <p className="text-lg font-bold text-slate-600 uppercase">Total a Pagar</p>
+            <p className="text-4xl font-black text-slate-900">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(os.valorEstimado || 0)}
+            </p>
+            
+            <div className="mt-16 flex justify-around items-center pt-8 border-t border-slate-300">
+              <div className="text-center w-64">
+                <div className="border-t border-slate-800 mb-2"></div>
+                <p className="text-xs uppercase font-bold text-slate-600">Assinatura da Oficina</p>
+              </div>
+              <div className="text-center w-64">
+                <div className="border-t border-slate-800 mb-2"></div>
+                <p className="text-xs uppercase font-bold text-slate-600">Assinatura do Cliente</p>
+              </div>
+            </div>
           </div>
 
         </div>
