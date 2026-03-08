@@ -10,7 +10,10 @@ import {
 import { auth, db } from "@/lib/firebase/config";
 import { doc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { Car, Lock, Mail, AlertCircle, User, Briefcase, FileText, Phone, Wrench } from "lucide-react";
+import { Car, Lock, Mail, AlertCircle, FileText, Phone, Wrench } from "lucide-react";
+import { Inter } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"] });
 
 type AuthMode = "login" | "register" | "forgot_password";
 
@@ -82,20 +85,28 @@ export default function AuthPage() {
       const trialEndsAt = new Date();
       trialEndsAt.setDate(trialEndsAt.getDate() + 15);
 
-      // Create user/tenant document
+      // Create user profile
       try {
         await setDoc(doc(db, "users", user.uid), {
           uid: user.uid,
           email: email,
           firstName,
           lastName,
-          company,
           cpf,
           phone,
-          cnpj: isInformal ? "Informal" : cnpj,
-          isInformal,
           role: "owner",
           tenant_id: user.uid, // Owner is their own tenant initially
+          createdAt: new Date(),
+          status: "active"
+        });
+        
+        // Initialize tenant document
+        await setDoc(doc(db, "tenants", user.uid), {
+          tenant_id: user.uid,
+          owner_uid: user.uid,
+          company_name: company,
+          cnpj: isInformal ? "Informal" : cnpj,
+          isInformal,
           createdAt: new Date(),
           trialEndsAt: trialEndsAt,
           status: "active"
@@ -144,7 +155,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 dark:bg-slate-900">
+    <div className={`min-h-screen flex flex-col md:flex-row bg-slate-50 dark:bg-slate-900 ${inter.className}`}>
       
       {/* Left Column: Forms */}
       <div className="w-full md:w-1/2 lg:w-5/12 p-8 md:p-12 lg:p-16 flex flex-col justify-center bg-slate-50 dark:bg-slate-900 z-10 shadow-[10px_0_20px_rgba(0,0,0,0.05)] overflow-y-auto">
@@ -188,11 +199,8 @@ export default function AuthPage() {
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Primeiro Nome</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><User size={18} /></div>
-                    <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} required className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="João" />
-                  </div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Nome</label>
+                  <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} required className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="João" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Sobrenome</label>
@@ -204,32 +212,32 @@ export default function AuthPage() {
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">E-mail</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Mail size={18} /></div>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="seu@email.com" />
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="joao@email.com" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Senha</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Lock size={18} /></div>
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="••••••••" />
+                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="••••••••" minLength={6} />
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Confirmar Senha</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Lock size={18} /></div>
-                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={6} className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="••••••••" />
+                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="••••••••" />
                   </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Nome da Empresa / Oficina</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400"><Briefcase size={18} /></div>
-                  <input type="text" value={company} onChange={(e) => setCompany(e.target.value)} required className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="Oficina do João" />
+              <div className="border-t border-slate-200 dark:border-slate-700 my-4 pt-4">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3 uppercase tracking-wider">Dados da Oficina</h3>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Nome da Oficina</label>
+                  <input type="text" value={company} onChange={(e) => setCompany(e.target.value)} required className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all dark:text-white shadow-sm" placeholder="Oficina do João" />
                 </div>
               </div>
 
