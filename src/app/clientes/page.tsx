@@ -60,6 +60,8 @@ export default function ClientesPage() {
   useEffect(() => {
     if (tenantId) {
       fetchClientes();
+    } else {
+      setLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId]);

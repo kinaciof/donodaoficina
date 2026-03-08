@@ -63,6 +63,8 @@ export default function Dashboard() {
   useEffect(() => {
     if (tenantId) {
       fetchData();
+    } else {
+      setLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId]);
@@ -166,7 +168,8 @@ export default function Dashboard() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {orders.map((os) => (
-              <div key={os.id} className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow relative group cursor-pointer">
+              <Link href={`/os/${os.id}`} key={os.id} className="block">
+                <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow relative group cursor-pointer h-full">
                 
                 <div className="flex justify-between items-start mb-3">
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${getStatusColor(os.status)}`}>
@@ -203,7 +206,8 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-              </div>
+                </div>
+              </Link>
             ))}
           </div>
         )}
