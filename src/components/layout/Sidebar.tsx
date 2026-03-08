@@ -22,10 +22,10 @@ import { useTenant } from "@/contexts/TenantContext";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/clientes", label: "Clientes", icon: Users },
-  { href: "/os", label: "Ordens de Serviço", icon: Wrench },
-  { href: "/estoque", label: "Estoque", icon: Package },
-  { href: "/fiscal", label: "Módulo Fiscal", icon: FileText },
+  { href: "/c-8a7b6c5d", label: "Clientes", icon: Users },
+  { href: "/o-1f2e3d4c", label: "Ordens de Serviço", icon: Wrench },
+  { href: "/e-9b8c7d6e", label: "Estoque", icon: Package },
+  { href: "/f-5a4b3c2d", label: "Módulo Fiscal", icon: FileText },
   { href: "/billing", label: "Assinatura", icon: CreditCard },
   { href: "/3a502f6b86d9a18016f4d38c64e5264f", label: "Configurações", icon: Settings },
 ];
