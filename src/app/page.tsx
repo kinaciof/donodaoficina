@@ -149,7 +149,7 @@ export default function Dashboard() {
             <Wrench size={20} className="text-emerald-600" />
             Ordens de Serviço Recentes
           </h2>
-          <Link href="/o-1f2e3d4c" className="text-sm font-medium text-emerald-600 hover:text-emerald-700">Ver todas &rarr;</Link>
+          <Link href="/dd302f94682dbd2a114d63b0433602e0" className="text-sm font-medium text-emerald-600 hover:text-emerald-700">Ver todas &rarr;</Link>
         </div>
 
         {loading ? (
@@ -168,7 +168,7 @@ export default function Dashboard() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {orders.map((os) => (
-              <Link href={`/o-1f2e3d4c/gestao?id=${os.id}`} key={os.id} className="block">
+              <Link href={`/dd302f94682dbd2a114d63b0433602e0/gestao?id=${os.id}`} key={os.id} className="block">
                 <div className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow relative group cursor-pointer h-full">
                 
                 <div className="flex justify-between items-start mb-3">
@@ -229,7 +229,7 @@ export default function Dashboard() {
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Selecione o Cliente *</label>
                 {clientes.length === 0 ? (
                   <div className="p-3 bg-orange-50 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 rounded text-sm mb-2 border border-orange-200 dark:border-orange-800">
-                    Você não tem clientes cadastrados. <Link href="/c-8a7b6c5d" className="font-bold underline">Cadastre um cliente</Link> primeiro.
+                    Você não tem clientes cadastrados. <Link href="/0670acdde4e1e38b56697bc77166b4ef" className="font-bold underline">Cadastre um cliente</Link> primeiro.
                   </div>
                 ) : (
                   <select 

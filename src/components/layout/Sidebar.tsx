@@ -22,10 +22,10 @@ import { useTenant } from "@/contexts/TenantContext";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/c-8a7b6c5d", label: "Clientes", icon: Users },
-  { href: "/o-1f2e3d4c", label: "Ordens de Serviço", icon: Wrench },
-  { href: "/e-9b8c7d6e", label: "Estoque", icon: Package },
-  { href: "/f-5a4b3c2d", label: "Módulo Fiscal", icon: FileText },
+  { href: "/0670acdde4e1e38b56697bc77166b4ef", label: "Clientes", icon: Users },
+  { href: "/dd302f94682dbd2a114d63b0433602e0", label: "Ordens de Serviço", icon: Wrench },
+  { href: "/6cfb561ab73cea537cdb793c22c1aa6f", label: "Estoque", icon: Package },
+  { href: "/14b1cf9d15b50e3cc5a19020bca18f59", label: "Módulo Fiscal", icon: FileText },
   { href: "/billing", label: "Assinatura", icon: CreditCard },
   { href: "/3a502f6b86d9a18016f4d38c64e5264f", label: "Configurações", icon: Settings },
 ];
@@ -81,10 +81,10 @@ export function Sidebar() {
               Administração Global
             </div>
             <Link
-              href="/admin"
+              href="/21232f297a57a5a743894a0e4a801fc3"
               onClick={() => setIsOpen(false)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                pathname === "/admin" 
+                pathname === "/21232f297a57a5a743894a0e4a801fc3" 
                   ? "bg-red-900/40 text-red-100 font-medium border border-red-500/30" 
                   : "text-red-200/70 hover:bg-red-900/30 hover:text-red-100"
               }`}
